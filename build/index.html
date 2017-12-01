@@ -327,8 +327,16 @@
         aoTable.push(Promise.all([loadImage(`https://picsum.photos/120?image=${table[i + 1]}`), Promise.resolve(table[i])]));
       }
 
-      Promise.all(aoTable)
-        .then(function (aoImages) {
+      function reflect(promise){
+        return promise.then(
+          function(v){ return {v:v, status: "resolved" }}, 
+          function(e){ return {e:e, status: "rejected" }}
+        );
+      }
+
+      Promise.all(aoTable.map(reflect))
+        .then(function (results) {
+          aoImages = results.filter(x => x.status === "resolved").map(x => x.v);
           setTimeout(() => {
             
             var gallery = document.getElementById('gallery')
@@ -360,7 +368,9 @@
       grid: []
     };
 
-
+    function isImage(i) {
+      return i instanceof HTMLImageElement;
+    }
     function init(aoImages) {
 
       camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 10000);
@@ -371,24 +381,25 @@
       // table
 
       for (var i = 0; i < aoImages.length; i += 1) {
+        if(isImage(aoImages[i][0])){
+          var element = document.createElement('div');
+          element.className = 'element';
 
-        var element = document.createElement('div');
-        element.className = 'element';
+          element.appendChild(aoImages[i][0]);
 
-        element.appendChild(aoImages[i][0]);
+          var details = document.createElement('div');
+          details.className = 'details';
+          details.innerHTML = aoImages[i][1];
+          element.appendChild(details);
 
-        var details = document.createElement('div');
-        details.className = 'details';
-        details.innerHTML = aoImages[i][1];
-        element.appendChild(details);
+          var object = new THREE.CSS3DObject(element);
+          object.position.x = Math.random() * 4000 - 2000;
+          object.position.y = Math.random() * 4000 - 2000;
+          object.position.z = Math.random() * 4000 - 2000;
+          scene.add(object);
 
-        var object = new THREE.CSS3DObject(element);
-        object.position.x = Math.random() * 4000 - 2000;
-        object.position.y = Math.random() * 4000 - 2000;
-        object.position.z = Math.random() * 4000 - 2000;
-        scene.add(object);
-
-        objects.push(object);
+          objects.push(object);
+        }
 
       }
 
